@@ -4,6 +4,7 @@ var jwt = require("jsonwebtoken");
 
 const { User } = require("../model/User");
 const { Conversation } = require("../model/Conversation");
+const { Message } = require("../model/Message");
 
 module.exports.registerUserCtrl = asyncHandler(async (req, res) => {
   const { fullName, email, password } = req.body;
@@ -67,6 +68,23 @@ module.exports.login = asyncHandler(async (req, res) => {
   return res.status(200).json(user);
 });
 
+module.exports.getallUders = asyncHandler(async (req, res) => {
+  try {
+    const users = await User.find();
+    const userData = Promise.all(
+      users.map(async (user) => {
+        return {
+          user: { email: user.email, fullName: user.fullName },
+          userId: user._id,
+        };
+      })
+    );
+    res.status(200).json(await userData);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 module.exports.createConversation = asyncHandler(async (req, res) => {
   try {
     const { senderId, receiverId } = req.body;
@@ -101,6 +119,39 @@ module.exports.getUserConversation = asyncHandler(async (req, res) => {
       })
     );
     res.status(200).json(await conversationData);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+module.exports.createMessage = asyncHandler(async (req, res) => {
+  try {
+    const { conversationId, senderId, message } = req.body;
+    const newMessage = await Message({ conversationId, senderId, message });
+    await newMessage.save();
+    res.status(200).json("Message create successfully");
+  } catch (error) {
+    console.log(error);
+  }
+});
+module.exports.getmessage = asyncHandler(async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const messages = await Message.find({
+      conversationId,
+    });
+    const messageData = Promise.all(
+      messages.map(async (message) => {
+        const user = await User.findById(message.senderId);
+        console.log(user);
+        return {
+          user: { email: user.email, fullName: user.fullName },
+          message: message.message,
+        };
+      })
+    );
+    res.status(200).json(await messageData);
   } catch (error) {
     console.log(error);
   }
