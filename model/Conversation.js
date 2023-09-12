@@ -14,7 +14,7 @@ const ConversationSchema = new mongoose.Schema(
 );
 
 // User model
-const User = mongoose.model("Conversation", ConversationSchema);
+const Conversation = mongoose.model("Conversation", ConversationSchema);
 
 module.exports = {
   Conversation,

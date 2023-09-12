@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 var jwt = require("jsonwebtoken");
 
 const { User } = require("../model/User");
+const { Conversation } = require("../model/Conversation");
 
 module.exports.registerUserCtrl = asyncHandler(async (req, res) => {
   const { fullName, email, password } = req.body;
@@ -64,4 +65,43 @@ module.exports.login = asyncHandler(async (req, res) => {
   );
 
   return res.status(200).json(user);
+});
+
+module.exports.createConversation = asyncHandler(async (req, res) => {
+  try {
+    const { senderId, receiverId } = req.body;
+
+    const newConversation = await Conversation({
+      members: [senderId, receiverId],
+    });
+    await newConversation.save();
+    res.status(200).json("Conversation created successfully");
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+module.exports.getUserConversation = asyncHandler(async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const conversations = await Conversation.find({
+      members: { $in: [userId] },
+    });
+    const conversationData = Promise.all(
+      conversations.map(async (conversation) => {
+        const receiverId = conversation.members.find(
+          (member) => member !== userId
+        );
+        const user = await User.findById(receiverId);
+        return {
+          user: { email: user.email, fullName: user.fullName },
+          conversationId: conversation._id,
+        };
+      })
+    );
+    res.status(200).json(await conversationData);
+  } catch (error) {
+    console.log(error);
+  }
 });
