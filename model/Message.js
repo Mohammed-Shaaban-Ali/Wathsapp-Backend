@@ -19,7 +19,7 @@ const MessageSchema = new mongoose.Schema(
 );
 
 // User model
-const User = mongoose.model("Message", MessageSchema);
+const Message = mongoose.model("Message", MessageSchema);
 
 module.exports = {
   Message,

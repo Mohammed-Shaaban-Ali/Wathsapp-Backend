@@ -1,10 +1,20 @@
 const router = require("express").Router();
-const { registerUserCtrl, login } = require("../controllers/userController");
+const {
+  registerUserCtrl,
+  login,
+  createConversation,
+  getUserConversation,
+} = require("../controllers/userController");
 
-//  /api/auth/register
+//  /api/register
 router.post("/register", registerUserCtrl);
 
-//  /api/auth/login
+//  /api/login
 router.post("/login", login);
+
+//  /api/Conversation
+router.post("/conversation", createConversation);
+//  /api/Conversation
+router.get("/conversation/:userId", getUserConversation);
 
 module.exports = router;
