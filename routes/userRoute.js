@@ -16,7 +16,7 @@ router.post("/register", registerUserCtrl);
 router.post("/login", login);
 
 //  /api/users
-router.get("/users", getallUders);
+router.get("/users/:userId", getallUders);
 
 //  /api/Conversation
 router.post("/conversation", createConversation);
