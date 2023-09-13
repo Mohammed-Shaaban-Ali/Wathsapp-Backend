@@ -65,17 +65,24 @@ module.exports.login = asyncHandler(async (req, res) => {
     }
   );
 
-  return res.status(200).json(user);
+  return res.status(200).json({
+    user: { id: user._id, fullName: user.fullName, email: user.email },
+    token: user.token,
+  });
 });
 
 module.exports.getallUders = asyncHandler(async (req, res) => {
   try {
-    const users = await User.find();
+    const { userId } = req.params;
+    const users = await User.find({ _id: { $ne: userId } });
     const userData = Promise.all(
       users.map(async (user) => {
         return {
-          user: { email: user.email, fullName: user.fullName },
-          userId: user._id,
+          user: {
+            email: user.email,
+            fullName: user.fullName,
+            receiverId: user._id,
+          },
         };
       })
     );
@@ -106,6 +113,7 @@ module.exports.getUserConversation = asyncHandler(async (req, res) => {
     const conversations = await Conversation.find({
       members: { $in: [userId] },
     });
+
     const conversationData = Promise.all(
       conversations.map(async (conversation) => {
         const receiverId = conversation.members.find(
@@ -113,7 +121,11 @@ module.exports.getUserConversation = asyncHandler(async (req, res) => {
         );
         const user = await User.findById(receiverId);
         return {
-          user: { email: user.email, fullName: user.fullName },
+          user: {
+            receiverId: user._id,
+            email: user.email,
+            fullName: user.fullName,
+          },
           conversationId: conversation._id,
         };
       })
@@ -126,8 +138,23 @@ module.exports.getUserConversation = asyncHandler(async (req, res) => {
 
 module.exports.createMessage = asyncHandler(async (req, res) => {
   try {
-    const { conversationId, senderId, message } = req.body;
+    const { conversationId, senderId, message, receiverId = "" } = req.body;
+    if (conversationId === "new" && receiverId) {
+      const newConversation = await Conversation({
+        members: [senderId, receiverId],
+      });
+      await newConversation.save();
+
+      const newMessage = await Message({
+        conversationId: newConversation._id,
+        senderId,
+        message,
+      });
+      await newMessage.save();
+      return res.status(200).json("message sent successfully");
+    }
     const newMessage = await Message({ conversationId, senderId, message });
+
     await newMessage.save();
     res.status(200).json("Message create successfully");
   } catch (error) {
@@ -137,21 +164,32 @@ module.exports.createMessage = asyncHandler(async (req, res) => {
 module.exports.getmessage = asyncHandler(async (req, res) => {
   try {
     const { conversationId } = req.params;
+    let chackMessage = async (conversationId) => {
+      const messages = await Message.find({
+        conversationId,
+      });
+      const messageData = Promise.all(
+        messages.map(async (message) => {
+          const user = await User.findById(message.senderId);
+          return {
+            user: { id: user._id, email: user.email, fullName: user.fullName },
+            message: message.message,
+          };
+        })
+      );
+      res.status(200).json(await messageData);
+    };
 
-    const messages = await Message.find({
-      conversationId,
-    });
-    const messageData = Promise.all(
-      messages.map(async (message) => {
-        const user = await User.findById(message.senderId);
-        console.log(user);
-        return {
-          user: { email: user.email, fullName: user.fullName },
-          message: message.message,
-        };
-      })
-    );
-    res.status(200).json(await messageData);
+    if (conversationId === "new") {
+      const chckconversation = await Conversation.find({
+        members: { $all: [req.query.senderId, req.query.receiverId] },
+      });
+      if (chckconversation.length > 0) {
+        chackMessage(chckconversation[0]._id);
+      } else {
+        return res.status(200).json([]);
+      }
+    } else chackMessage(conversationId);
   } catch (error) {
     console.log(error);
   }
