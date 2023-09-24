@@ -9,15 +9,15 @@ const PORT = process.env.PORT || 8000;
 // connect to the database
 connectToDb();
 
-//socket
-const io = require("socket.io")(8080, {
-  cors: {
-    origin: "http://localhost:3000",
-  },
-});
-
 //Init App
 const app = express();
+const server = require("http").createServer(app);
+//socket
+const io = require("socket.io")(server, {
+  cors: {
+    origin: "https://chat-app-ao0y.onrender.com",
+  },
+});
 
 // cors
 app.use(cors());
@@ -77,6 +77,6 @@ io.on("connection", (socket) => {
 // Route
 app.use("/api", require("./routes/userRoute"));
 
-app.listen(PORT, () =>
+server.listen(PORT, () =>
   console.log(`Server running in ${process.env.NODE_ENV} port ${PORT}`)
 );
