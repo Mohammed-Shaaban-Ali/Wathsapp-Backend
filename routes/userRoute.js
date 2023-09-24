@@ -19,13 +19,13 @@ router.post("/login", login);
 router.get("/users/:userId", getallUders);
 
 //  /api/Conversation
-router.post("/conversation", createConversation);
+router.post("/conversations", createConversation);
 //  /api/Conversation
-router.get("/conversation/:userId", getUserConversation);
+router.get("/conversations/:userId", getUserConversation);
 
 //  /api/meessage
-router.post("/meessage", createMessage);
+router.post("/message", createMessage);
 //  /api/meessage/:conversationId
-router.get("/meessage/:conversationId", getmessage);
+router.get("/message/:conversationId", getmessage);
 
 module.exports = router;
